@@ -55,6 +55,20 @@ void Iter() {
         latched_faults &= new_active;
         clear_requested = false;
     }
+    
+    if (latched_faults != 0)
+    {
+        HAL_SetSDC(false);
+    }
+    else
+    {
+        HAL_SetSDC(true);
+    }
+    
+    uint8_t tx_data[CAN_LEN] = {0};
+    tx_data[0] = active_faults;
+    tx_data[1] = latched_faults;
+    HAL_SendCanMsg(0x0B0, tx_data);
 }
 
 void RxCan() {
