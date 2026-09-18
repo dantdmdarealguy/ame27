@@ -1,7 +1,22 @@
 #include "hal.h"
 
+static uint8_t active_faults = 0;
+static uint8_t latched_faults = 0;
+
+enum faultstore
+{
+    FAULT_CELL_OVER_VOLTAGE = 1 << 0,
+    FAULT_CELL_UNDER_VOLTAGE = 1 << 1,
+    FAULT_CELL_OVER_TEMP = 1 << 2,
+    FAULT_CELL_DELTA_EXCEEDED = 1 << 3,
+    FAULT_PACK_OVER_CURRENT = 1 << 4,
+};
+
+static volatile int32_t latest_current_mA = 0;
+static volatile bool clear_requested = false;
+
 void Init() {
-    // This function runs once on startup
+    
 }
 
 void Iter() {
