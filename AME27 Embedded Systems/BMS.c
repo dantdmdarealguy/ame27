@@ -16,21 +16,45 @@ static volatile int32_t latest_current_mA = 0;
 static volatile bool clear_requested = false;
 
 void Init() {
-    
+    active_faults = 0;
+    latched_faults = 0;
+    HAL_SetSDC(false);
 }
 
 void Iter() {
-    // This function runs periodically at ~20Hz
+    float voltages[N_CELLS];
+    float temperatures[N_CELLS];
+    HAL_ReadVoltages(voltages);
+    HAL_ReadTemperatures(temperatures);
+    
+    float min_voltage = voltages[0];
+    float max_voltage = voltages[0];
+    float max_temperature = temperatures[0];
+    for (int i = 0; i < N_CELLS; i++)
+    {
+        float v = voltages[i];
+        float t = temperatures[i];
+    
+        if (v > max_voltage) max_voltage = v;
+        if (v < min_voltage) min_voltage = v;
+        if (t > max_temperature) max_temperature = t;
+    }
 }
 
 void RxCan() {
-    // Called every time a CAN frame is received on the bus, using an interrupt.
-    // Keep in mind, this can be called at any point in the execution of your program.
-    // You may not use any HAL_* functions here except HAL_RecvCanMsg,
-    // which is how you can pull the message from the bus.
-    // An example for pulling a CAN frame is shown below.
-
     uint8_t data[CAN_LEN];
     uint16_t id;
     HAL_RecvCanMsg(&id, data);
+
+    switch (id)
+    {
+    case 0x511:
+        latest_current_mA = (int32_t)((data[2] << 24) | (data[3] << 16) | (data[4] << 8) | data[5]);
+        break;
+    case 0x1CF:
+        clear_requested = true;
+        break;
+    default: 
+        break;
+    }
 }
