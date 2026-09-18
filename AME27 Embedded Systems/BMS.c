@@ -39,6 +39,22 @@ void Iter() {
         if (v < min_voltage) min_voltage = v;
         if (t > max_temperature) max_temperature = t;
     }
+    
+    uint8_t new_active = 0;
+    int32_t current_mA = latest_current_mA;
+    if (max_voltage > 4.2f) new_active |= FAULT_CELL_OVER_VOLTAGE;
+    if (min_voltage < 2.5f) new_active |= FAULT_CELL_UNDER_VOLTAGE;
+    if (max_temperature > 60.0f) new_active |= FAULT_CELL_OVER_TEMP;
+    if ((max_voltage - min_voltage) > 0.2f) new_active |= FAULT_CELL_DELTA_EXCEEDED;
+    if (current_mA > 200000 || current_mA < -200000) new_active |= FAULT_PACK_OVER_CURRENT;
+    
+    active_faults = new_active;
+    latched_faults |= new_active;
+    if (clear_requested)
+    {
+        latched_faults &= new_active;
+        clear_requested = false;
+    }
 }
 
 void RxCan() {
